@@ -231,4 +231,5 @@ The examples demonstrate:
 ## Learn More
 
 - [DSPy Documentation](https://github.com/stanfordnlp/dspy)
-- Full book: "Stop Wrestling with Prompts: How DSPy Transforms Fragile AI into Reliable Software"
+- [Full book: "Stop Wrestling with Prompts: How DSPy Transforms Fragile AI into Reliable Software"](https://rick-hightower.notion.site/DSPy-Book-20ad6bbdbbea80e1931befaa23292c5e)
+
