@@ -1,0 +1,87 @@
+version: '3'
+
+tasks:
+  default:
+    desc: "Default task - runs all tasks"
+    cmds:
+      - task: all
+
+  setup:
+    desc: "Set up the Python environment"
+    cmds:
+      - pyenv install -s 3.12.8
+      - pyenv local 3.12.8
+      - poetry install
+      - poetry config virtualenvs.in-project true
+      - chmod +x .venv/bin/activate
+      - source .venv/bin/activate
+
+  run:
+    desc: "Run the main example"
+    cmds:
+      - poetry run python src/main.py
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  run-basic:
+    desc: "Run basic examples"
+    cmds:
+      - poetry run python src/basic_examples.py
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  run-structured:
+    desc: "Run structured outputs example"
+    cmds:
+      - poetry run python src/structured_outputs.py
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  run-pipelines:
+    desc: "Run pipelines example"
+    cmds:
+      - poetry run python src/pipelines.py
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  run-optimization:
+    desc: "Run optimization example"
+    cmds:
+      - poetry run python src/optimization.py
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  test:
+    desc: "Run tests"
+    cmds:
+      - poetry run pytest tests/
+    env:
+      LLM_PROVIDER: ollama
+      OLLAMA_MODEL: gemma3:27b
+
+  format:
+    desc: "Format code"
+    cmds:
+      - poetry run black src/ tests/
+      - poetry run ruff check --fix src/ tests/
+
+  clean:
+    desc: "Clean up generated files"
+    cmds:
+      - find . -type d -name "__pycache__" -exec rm -rf {} +
+      - find . -type f -name "*.pyc" -delete
+      - rm -rf .pytest_cache
+      - rm -rf .ruff_cache
+
+  all:
+    desc: "Run all tasks"
+    cmds:
+      - task: setup
+      - task: format
+      - task: run
+      # Tests require Ollama to be running - run separately with 'task test'

@@ -1,0 +1,80 @@
+# Default configuration for YAML Project
+include_pattern: null
+exclude_pattern: null
+temp_dir: null
+backup_dir: null
+supported_extensions:
+  .py: python
+  .sh: bash
+  .java: java
+  .js: javascript
+  .jsx: javascript
+  .ts: typescript
+  .tsx: typescript
+  .html: html
+  .css: css
+  .md: markdown
+  .yml: yaml
+  .yaml: yaml
+  .json: json
+  .txt: text
+  .go: go
+  .rs: rust
+  .rb: ruby
+  .php: php
+  .c: c
+  .cpp: cpp
+  .h: c
+  .hpp: cpp
+  .cs: csharp
+  .toml: toml
+  .xml: xml
+  .sql: sql
+  .kt: kotlin
+  .swift: swift
+  .dart: dart
+  .r: r
+  .scala: scala
+  .pl: perl
+  .lua: lua
+  .ini: ini
+  .cfg: ini
+  .properties: properties
+forbidden_dirs:
+  - __pycache__
+  - node_modules
+  - dist
+  - cdk.out
+  - env
+  - venv
+  - .venv
+  - .idea
+  - build
+  - .git
+  - .svn
+  - .hg
+  - .DS_Store
+  - .vs
+  - .vscode
+  - target
+  - bin
+  - obj
+  - out
+  - Debug
+  - Release
+  - tmp
+  - .tox
+  - .pytest_cache
+  - __MACOSX
+  - .mypy_cache
+  - tests
+outfile: project.yaml
+log_level: INFO
+max_file_size: 204800  # 200KB
+metadata_fields:
+  - extension
+  - size_bytes
+  - language
+yaml_format:
+  indent: 2
+  width: 120

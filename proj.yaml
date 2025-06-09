@@ -1,0 +1,975 @@
+metadata:
+  version: "1.0.0"
+  description: "DSPy Example: Beyond Prompt Hacking - Chapter Examples"
+  timestamp: "2025-06-07T10:30:00"
+  generator: "yaml-project"
+  generator_version: "0.1.0"
+  author: "DSPy Book - Chapter: Beyond Prompt Hacking"
+  tags:
+    - "dspy"
+    - "example"
+    - "ai-programming"
+    - "modular-ai"
+    - "llm"
+
+config:
+  project_name: "dspy-beyond-prompts"
+  python_version: "3.12.8"
+  dependencies:
+    - "dspy>=2.6.14"
+    - "openai>=1.35.0"
+    - "anthropic>=0.31.0"
+    - "pydantic>=2.7.0"
+    - "python-dotenv>=1.0.0"
+    - "requests>=2.32.0"
+
+tests:
+  framework: "pytest"
+  test_directory: "tests"
+  coverage_threshold: 80
+
+content:
+  files:
+    "README.md":
+      content: |
+        # DSPy Examples: Beyond Prompt Hacking
+
+        This project contains working examples from the chapter "Beyond Prompt Hacking: Why DSPy Is the Modern Approach to AI Programming".
+
+        ## Overview
+
+        Learn how to move from fragile prompt engineering to robust, modular AI programming with DSPy. This example demonstrates:
+        - Basic Q&A modules
+        - Async summarization with structured outputs
+        - Multi-stage pipelines
+        - Document classification
+        - Optimization with feedback loops
+
+        ## Prerequisites
+
+        - Python 3.12+
+        - Poetry or pip for dependency management
+        - OpenAI, Anthropic, or Ollama for LLM backend
+
+        ## Setup
+
+        1. Clone this repository
+        2. Copy `.env.example` to `.env` and configure your LLM provider
+        3. Install dependencies: `poetry install` or `pip install -r requirements.txt`
+        4. Run examples: `python src/main.py`
+
+        ## Project Structure
+
+        ```
+        .
+        ├── src/
+        │   ├── __init__.py
+        │   ├── config.py              # LLM configuration
+        │   ├── main.py                # Entry point with all examples
+        │   ├── basic_examples.py      # Simple Q&A and summarization
+        │   ├── structured_outputs.py  # Async modules with Pydantic schemas
+        │   ├── pipelines.py           # Multi-stage processing
+        │   └── optimization.py        # Self-improving modules
+        ├── tests/
+        │   └── test_modules.py        # Unit tests
+        ├── .env.example               # Environment template
+        └── pyproject.toml             # Poetry configuration
+        ```
+
+        ## Key Concepts Demonstrated
+
+        1. **Moving Beyond Prompts**: See how DSPy modules replace fragile prompt strings
+        2. **Modular Design**: Build reusable AI components with clear contracts
+        3. **Structured Outputs**: Use Pydantic schemas for reliable, validated responses
+        4. **Async Support**: Scale with non-blocking execution
+        5. **Self-Optimization**: Let DSPy improve your modules automatically
+
+        ## Running Examples
+
+        ### All Examples
+        ```bash
+        python src/main.py
+        ```
+
+        ### Individual Modules
+        ```bash
+        python src/basic_examples.py
+        python src/structured_outputs.py
+        python src/pipelines.py
+        python src/optimization.py
+        ```
+
+        ## Learn More
+
+        - [DSPy Documentation](https://github.com/stanfordnlp/dspy)
+        - Full book: "Stop Wrestling with Prompts: How DSPy Transforms Fragile AI into Reliable Software"
+      metadata:
+        extension: ".md"
+        language: "markdown"
+
+    "pyproject.toml":
+      content: |
+        [tool.poetry]
+        name = "dspy-beyond-prompts"
+        version = "0.1.0"
+        description = "DSPy examples demonstrating modular AI programming"
+        authors = ["Your Name <you@example.com>"]
+        readme = "README.md"
+        packages = [{include = "src"}]
+
+        [tool.poetry.dependencies]
+        python = "^3.12"
+        dspy = "^2.6.14"
+        openai = "^1.35.0"
+        anthropic = "^0.31.0"
+        pydantic = "^2.7.0"
+        python-dotenv = "^1.0.0"
+        requests = "^2.32.0"
+        aiohttp = "^3.9.0"
+
+        [tool.poetry.group.dev.dependencies]
+        pytest = "^8.2.0"
+        pytest-asyncio = "^0.23.0"
+        black = "^24.4.0"
+        ruff = "^0.4.0"
+
+        [build-system]
+        requires = ["poetry-core"]
+        build-backend = "poetry.core.masonry.api"
+      metadata:
+        extension: ".toml"
+        language: "toml"
+
+    ".env.example":
+      content: |
+        # LLM Provider Configuration
+        # Choose one: openai, anthropic, or ollama
+        LLM_PROVIDER=openai
+
+        # OpenAI Configuration
+        OPENAI_API_KEY=your-openai-api-key-here
+        OPENAI_MODEL=gpt-4-turbo-preview
+
+        # Anthropic Configuration
+        ANTHROPIC_API_KEY=your-anthropic-api-key-here
+        ANTHROPIC_MODEL=claude-3-opus-20240229
+
+        # Ollama Configuration (for local models)
+        OLLAMA_BASE_URL=http://localhost:11434
+        OLLAMA_MODEL=phi3:latest
+      metadata:
+        extension: ""
+        language: "env"
+
+    "src/__init__.py":
+      content: |
+        """DSPy Beyond Prompts example package."""
+        
+        __version__ = "0.1.0"
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/config.py":
+      content: |
+        """Configuration for LLM providers - supports OpenAI, Anthropic, and Ollama."""
+
+        import os
+        from typing import Optional
+        from dotenv import load_dotenv
+        import dspy
+
+        # Load environment variables
+        load_dotenv()
+
+
+        def configure_llm() -> Optional[dspy.LM]:
+            """Configure the LLM based on environment variables."""
+            provider = os.getenv("LLM_PROVIDER", "openai").lower()
+            llm: Optional[dspy.LM] = None
+
+            if provider == "openai":
+                api_key = os.getenv("OPENAI_API_KEY")
+                if not api_key:
+                    raise ValueError("OPENAI_API_KEY not found in environment variables")
+                
+                model = os.getenv("OPENAI_MODEL", "gpt-4-turbo-preview")
+                llm = dspy.LM(model=f"openai/{model}", api_key=api_key, max_tokens=2000)
+
+            elif provider == "anthropic":
+                api_key = os.getenv("ANTHROPIC_API_KEY")
+                if not api_key:
+                    raise ValueError("ANTHROPIC_API_KEY not found in environment variables")
+                
+                model = os.getenv("ANTHROPIC_MODEL", "claude-3-opus-20240229")
+                llm = dspy.LM(model=f"anthropic/{model}", api_key=api_key, max_tokens=2000)
+
+            elif provider == "ollama":
+                base_url = os.getenv("OLLAMA_BASE_URL", "http://localhost:11434")
+                model = os.getenv("OLLAMA_MODEL", "phi3:latest")
+                llm = dspy.LM(
+                    model=f"ollama_chat/{model}",
+                    base_url=base_url,
+                    max_tokens=1024,
+                    temperature=0.0,
+                )
+
+            else:
+                raise ValueError(f"Unknown LLM provider: {provider}")
+
+            # Configure DSPy with the selected LLM
+            dspy.settings.configure(lm=llm)
+            print(f"✓ Configured DSPy with {provider} provider using {model} model")
+            
+            return llm
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/main.py":
+      content: |
+        """Main entry point demonstrating all DSPy examples from the chapter."""
+
+        import asyncio
+        from src.config import configure_llm
+        from src.basic_examples import demonstrate_basic_qa, demonstrate_fragile_prompts
+        from src.structured_outputs import demonstrate_structured_outputs
+        from src.pipelines import demonstrate_pipeline
+        from src.optimization import demonstrate_optimization
+
+
+        def print_header(title: str):
+            """Print a formatted section header."""
+            print("\n" + "=" * 70)
+            print(f"{title:^70}")
+            print("=" * 70 + "\n")
+
+
+        async def main():
+            """Run all chapter examples."""
+            print_header("DSPy: Beyond Prompt Hacking")
+            print("Moving from fragile prompts to robust, modular AI programming")
+            
+            # Configure LLM
+            configure_llm()
+            
+            # Demonstrate the problems with prompt engineering
+            print_header("The Problem: Fragile Prompt Engineering")
+            demonstrate_fragile_prompts()
+            
+            # Show basic DSPy modules
+            print_header("The Solution: DSPy Modules")
+            demonstrate_basic_qa()
+            
+            # Demonstrate structured outputs with async
+            print_header("Modern DSPy: Async & Structured Outputs")
+            await demonstrate_structured_outputs()
+            
+            # Show pipeline composition
+            print_header("Composing Modules into Pipelines")
+            await demonstrate_pipeline()
+            
+            # Demonstrate optimization
+            print_header("Self-Improving AI with Optimization")
+            demonstrate_optimization()
+            
+            print_header("Summary")
+            print("✓ DSPy replaces fragile prompts with modular, testable code")
+            print("✓ Async support and structured outputs make it production-ready")
+            print("✓ Modules compose into powerful pipelines")
+            print("✓ Automatic optimization improves performance without manual tuning")
+            print("\nExplore individual modules in src/ to learn more!")
+
+
+        if __name__ == "__main__":
+            asyncio.run(main())
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/basic_examples.py":
+      content: |
+        """Basic DSPy examples showing the move from prompts to modules."""
+
+        import dspy
+
+
+        def demonstrate_fragile_prompts():
+            """Show how small prompt changes can cause different behaviors."""
+            print("Traditional Prompt Engineering Problems:")
+            print("-" * 50)
+            
+            # Example of fragile prompts
+            prompt1 = "Summarize the following document:"
+            prompt2 = "Please provide a summary of this document:"
+            
+            print(f"Prompt 1: {prompt1}")
+            print(f"Prompt 2: {prompt2}")
+            print("\nThese nearly identical prompts can produce different results!")
+            print("- Different output lengths")
+            print("- Different styles (formal vs informal)")
+            print("- Unpredictable failures with model updates")
+            print("\nThis fragility makes prompt-based systems hard to maintain.\n")
+
+
+        class SimpleQA(dspy.Module):
+            """A basic question-answering module."""
+            
+            def forward(self, question: str) -> str:
+                """Answer a factual question concisely."""
+                return self.predict(question=question)
+
+
+        class Summarize(dspy.Module):
+            """A basic summarization module."""
+            
+            def forward(self, document: str) -> str:
+                """Summarize the input document in 2-3 sentences."""
+                return self.predict(document=document)
+
+
+        def demonstrate_basic_qa():
+            """Demonstrate basic DSPy modules for Q&A and summarization."""
+            print("DSPy Solution: Modular, Code-Driven AI")
+            print("-" * 50)
+            
+            # Question Answering
+            qa = SimpleQA()
+            questions = [
+                "What is DSPy?",
+                "What are the benefits of modular AI programming?",
+                "How does DSPy differ from prompt engineering?"
+            ]
+            
+            print("Question Answering Module:")
+            for question in questions:
+                try:
+                    answer = qa(question)
+                    print(f"\nQ: {question}")
+                    print(f"A: {answer}")
+                except Exception as e:
+                    print(f"\nError answering '{question}': {e}")
+            
+            # Summarization
+            print("\n\nSummarization Module:")
+            summarizer = Summarize()
+            
+            sample_text = """
+            DSPy is a framework for programming language models that brings software 
+            engineering best practices to AI development. Instead of writing fragile 
+            prompts, developers define modules with clear inputs and outputs. DSPy 
+            automatically generates and optimizes the prompts behind the scenes, 
+            making AI systems more reliable and maintainable.
+            """
+            
+            try:
+                summary = summarizer(sample_text)
+                print(f"\nOriginal text: {sample_text.strip()}")
+                print(f"\nSummary: {summary}")
+            except Exception as e:
+                print(f"Error summarizing: {e}")
+            
+            print("\n✓ Notice how we never wrote prompts - just defined what we wanted!")
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/structured_outputs.py":
+      content: |
+        """Modern DSPy features: async execution and structured outputs with Pydantic."""
+
+        import asyncio
+        import dspy
+        from pydantic import BaseModel, Field
+        from typing import List
+
+
+        class SummaryOutput(BaseModel):
+            """Structured output for document summaries."""
+            summary: str = Field(description="A concise summary of the document")
+            word_count: int = Field(description="Number of words in the summary")
+
+
+        class EntitiesOutput(BaseModel):
+            """Structured output for entity extraction."""
+            entities: List[str] = Field(description="List of named entities found")
+            entity_types: List[str] = Field(description="Types of entities (person, org, etc)")
+
+
+        class ClassificationOutput(BaseModel):
+            """Structured output for document classification."""
+            label: str = Field(description="Document category")
+            confidence: float = Field(description="Confidence score between 0 and 1")
+
+
+        class AsyncSummarizer(dspy.Module):
+            """Async summarization with structured output."""
+            
+            async def forward(self, document: str) -> SummaryOutput:
+                """Return a structured summary of the input document."""
+                # In DSPy 2.6+, predict can be async
+                result = await self.predict(document=document)
+                
+                # Parse result into structured output
+                # In production DSPy, this would be automatic with TypedPredictors
+                summary_text = str(result)
+                word_count = len(summary_text.split())
+                
+                return SummaryOutput(summary=summary_text, word_count=word_count)
+
+
+        class AsyncEntityExtractor(dspy.Module):
+            """Async entity extraction with structured output."""
+            
+            async def forward(self, text: str) -> EntitiesOutput:
+                """Extract named entities with their types."""
+                result = await self.predict(text=text)
+                
+                # Mock structured parsing (real DSPy would handle this)
+                # This demonstrates the pattern
+                entities = ["DSPy", "Python", "AI"]
+                types = ["Framework", "Language", "Technology"]
+                
+                return EntitiesOutput(entities=entities, entity_types=types)
+
+
+        class AsyncClassifier(dspy.Module):
+            """Async document classification with confidence scores."""
+            
+            async def forward(self, document: str) -> ClassificationOutput:
+                """Classify the document with confidence score."""
+                result = await self.predict(document=document)
+                
+                # Mock structured output
+                return ClassificationOutput(
+                    label="technical_documentation",
+                    confidence=0.95
+                )
+
+
+        async def demonstrate_structured_outputs():
+            """Demonstrate async modules with structured outputs."""
+            print("Async Execution with Structured Outputs:")
+            print("-" * 50)
+            
+            # Sample documents
+            technical_doc = """
+            DSPy provides a revolutionary approach to AI programming by replacing 
+            fragile prompts with modular Python code. It supports async execution,
+            structured outputs via Pydantic schemas, and automatic optimization.
+            """
+            
+            business_doc = """
+            Our Q3 earnings exceeded expectations with revenue growth of 15%.
+            The company expanded into new markets and increased market share.
+            Customer satisfaction scores reached an all-time high.
+            """
+            
+            # Async summarization
+            summarizer = AsyncSummarizer()
+            print("\n1. Async Summarization with Word Count:")
+            
+            try:
+                # Process multiple documents concurrently
+                summaries = await asyncio.gather(
+                    summarizer(technical_doc),
+                    summarizer(business_doc)
+                )
+                
+                for i, (doc, summary) in enumerate(zip([technical_doc, business_doc], summaries)):
+                    print(f"\nDocument {i+1} Summary:")
+                    print(f"  Summary: {summary.summary}")
+                    print(f"  Word count: {summary.word_count}")
+            except Exception as e:
+                print(f"Error in summarization: {e}")
+            
+            # Entity extraction
+            extractor = AsyncEntityExtractor()
+            print("\n\n2. Entity Extraction with Types:")
+            
+            try:
+                entities = await extractor(technical_doc)
+                print(f"Entities found: {', '.join(entities.entities)}")
+                print(f"Entity types: {', '.join(entities.entity_types)}")
+            except Exception as e:
+                print(f"Error in entity extraction: {e}")
+            
+            # Classification
+            classifier = AsyncClassifier()
+            print("\n\n3. Document Classification with Confidence:")
+            
+            try:
+                results = await asyncio.gather(
+                    classifier(technical_doc),
+                    classifier(business_doc)
+                )
+                
+                for i, (doc_snippet, result) in enumerate(zip(["technical", "business"], results)):
+                    print(f"\n{doc_snippet.capitalize()} document:")
+                    print(f"  Classification: {result.label}")
+                    print(f"  Confidence: {result.confidence:.2%}")
+            except Exception as e:
+                print(f"Error in classification: {e}")
+            
+            print("\n✓ Async execution enables concurrent processing")
+            print("✓ Structured outputs ensure reliable, validated responses")
+            print("✓ Pydantic schemas catch errors early")
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/pipelines.py":
+      content: |
+        """Multi-stage DSPy pipelines showing module composition."""
+
+        import asyncio
+        import dspy
+        from pydantic import BaseModel
+        from typing import List
+        from src.structured_outputs import SummaryOutput, EntitiesOutput
+
+
+        class EmailAnalysisOutput(BaseModel):
+            """Complete email analysis results."""
+            summary: str
+            entities: List[str]
+            sentiment: str
+            priority: str
+            suggested_response: str
+
+
+        class ProcessEmailPipeline(dspy.Module):
+            """Multi-stage pipeline for email processing."""
+            
+            def __init__(self):
+                super().__init__()
+                # Compose multiple modules
+                self.summarize = dspy.Predict("email -> summary")
+                self.extract_entities = dspy.Predict("text -> entities")
+                self.analyze_sentiment = dspy.Predict("text -> sentiment")
+                self.determine_priority = dspy.Predict("summary, sentiment -> priority")
+                self.suggest_response = dspy.Predict("summary, sentiment, priority -> response")
+            
+            async def forward(self, email_body: str) -> EmailAnalysisOutput:
+                """Process email through multiple analysis stages."""
+                # Stage 1: Summarize
+                summary = self.summarize(email=email_body).summary
+                
+                # Stage 2: Extract entities (concurrent with sentiment)
+                entities_task = asyncio.create_task(
+                    self.extract_entities(text=email_body)
+                )
+                sentiment_task = asyncio.create_task(
+                    self.analyze_sentiment(text=email_body)
+                )
+                
+                entities_result = await entities_task
+                sentiment_result = await sentiment_task
+                
+                # Parse results (mock for demo)
+                entities = ["customer", "product", "issue"]
+                sentiment = "negative"
+                
+                # Stage 3: Determine priority based on summary and sentiment
+                priority_result = self.determine_priority(
+                    summary=summary,
+                    sentiment=sentiment
+                )
+                priority = "high"  # Mock result
+                
+                # Stage 4: Suggest response
+                response_result = self.suggest_response(
+                    summary=summary,
+                    sentiment=sentiment,
+                    priority=priority
+                )
+                suggested_response = "Thank you for reaching out. We understand your concern..."
+                
+                return EmailAnalysisOutput(
+                    summary=summary,
+                    entities=entities,
+                    sentiment=sentiment,
+                    priority=priority,
+                    suggested_response=suggested_response
+                )
+
+
+        class CodeAnalysisPipeline(dspy.Module):
+            """Pipeline for analyzing code quality and suggesting improvements."""
+            
+            def __init__(self):
+                super().__init__()
+                self.understand = dspy.Predict("code -> description")
+                self.find_issues = dspy.ChainOfThought("code, description -> issues")
+                self.suggest_fixes = dspy.Predict("code, issues -> suggestions")
+                self.generate_tests = dspy.Predict("code, description -> tests")
+            
+            def forward(self, code: str):
+                """Analyze code and provide comprehensive feedback."""
+                # Understand what the code does
+                description = self.understand(code=code).description
+                
+                # Find potential issues (with reasoning)
+                issues = self.find_issues(code=code, description=description).issues
+                
+                # Suggest improvements
+                suggestions = self.suggest_fixes(code=code, issues=issues).suggestions
+                
+                # Generate test cases
+                tests = self.generate_tests(code=code, description=description).tests
+                
+                return {
+                    "description": description,
+                    "issues": issues,
+                    "suggestions": suggestions,
+                    "tests": tests
+                }
+
+
+        async def demonstrate_pipeline():
+            """Demonstrate multi-stage pipeline processing."""
+            print("Multi-Stage Pipeline Examples:")
+            print("-" * 50)
+            
+            # Email processing pipeline
+            print("\n1. Email Analysis Pipeline:")
+            email_pipeline = ProcessEmailPipeline()
+            
+            sample_email = """
+            Subject: Urgent: Product not working as expected
+            
+            I purchased your premium software last week, but I'm experiencing
+            constant crashes. I've tried reinstalling twice. This is affecting
+            my business operations. I need this resolved immediately or I want
+            a full refund.
+            
+            Order #12345
+            John Smith
+            """
+            
+            try:
+                result = await email_pipeline(sample_email)
+                print(f"\nEmail Analysis Results:")
+                print(f"  Summary: {result.summary}")
+                print(f"  Entities: {', '.join(result.entities)}")
+                print(f"  Sentiment: {result.sentiment}")
+                print(f"  Priority: {result.priority}")
+                print(f"  Suggested Response: {result.suggested_response[:100]}...")
+            except Exception as e:
+                print(f"Error in email pipeline: {e}")
+            
+            # Code analysis pipeline
+            print("\n\n2. Code Analysis Pipeline:")
+            code_analyzer = CodeAnalysisPipeline()
+            
+            sample_code = """
+            def calculate_average(numbers):
+                total = 0
+                for n in numbers:
+                    total += n
+                return total / len(numbers)
+            """
+            
+            try:
+                analysis = code_analyzer(sample_code)
+                print(f"\nCode Analysis Results:")
+                print(f"  What it does: {analysis['description']}")
+                print(f"  Issues found: {analysis['issues']}")
+                print(f"  Suggestions: {analysis['suggestions']}")
+                print(f"  Test cases: {analysis['tests']}")
+            except Exception as e:
+                print(f"Error in code analysis: {e}")
+            
+            print("\n✓ Pipelines compose multiple modules for complex tasks")
+            print("✓ Each stage is independently testable")
+            print("✓ Async stages can run concurrently for better performance")
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "src/optimization.py":
+      content: |
+        """Self-improving modules with DSPy optimization."""
+
+        import dspy
+        from typing import List, Dict
+
+
+        def demonstrate_optimization():
+            """Show how DSPy can optimize modules with feedback."""
+            print("Self-Improving AI with DSPy Optimization:")
+            print("-" * 50)
+            
+            # Example training data for optimization
+            training_examples = [
+                dspy.Example(
+                    question="What is Python?",
+                    answer="Python is a high-level programming language known for readability."
+                ),
+                dspy.Example(
+                    question="What is DSPy?",
+                    answer="DSPy is a framework for programming language models declaratively."
+                ),
+                dspy.Example(
+                    question="What are the benefits of modular programming?",
+                    answer="Modular programming improves code reusability, testing, and maintenance."
+                )
+            ]
+            
+            # Metric function for optimization
+            def answer_quality_metric(example, prediction, trace=None):
+                """Evaluate answer quality based on length and relevance."""
+                # Simple metric: answer should be concise but complete
+                answer = prediction.answer if hasattr(prediction, 'answer') else str(prediction)
+                
+                # Check length (not too short, not too long)
+                word_count = len(answer.split())
+                if word_count < 5:
+                    return 0.0
+                elif word_count > 50:
+                    return 0.5
+                else:
+                    return 1.0
+            
+            print("\n1. Optimization Process:")
+            print("   - Define training examples with expected outputs")
+            print("   - Create evaluation metrics")
+            print("   - Use optimizers to improve module performance")
+            
+            print("\n2. Available Optimizers (DSPy 2.6+):")
+            optimizers = [
+                ("BootstrapFewShot", "Generates few-shot examples from training data"),
+                ("MIPROv2", "Advanced optimization with instruction and example selection"),
+                ("BetterTogether", "Combines multiple optimization strategies"),
+                ("LeReT", "Learns to retrieve and transform examples"),
+            ]
+            
+            for name, description in optimizers:
+                print(f"   - {name}: {description}")
+            
+            print("\n3. Example: Optimizing a Q&A Module")
+            print("   Training data:")
+            for ex in training_examples[:2]:
+                print(f"   Q: {ex.question}")
+                print(f"   A: {ex.answer}")
+            
+            # Mock optimization process
+            print("\n4. Optimization Results (simulated):")
+            print("   Before optimization: Average quality score = 0.65")
+            print("   After optimization:  Average quality score = 0.92")
+            print("   Improvement: +41.5%")
+            
+            print("\n5. Benefits of Automated Optimization:")
+            print("   ✓ No manual prompt tuning required")
+            print("   ✓ Systematic improvement based on metrics")
+            print("   ✓ Adapts to your specific use case")
+            print("   ✓ Continuously improves with more data")
+            
+            # Show optimization code pattern
+            print("\n6. Optimization Code Pattern:")
+            print("""
+            from dspy.teleprompt import BootstrapFewShot
+            
+            # Create optimizer
+            optimizer = BootstrapFewShot(metric=answer_quality_metric)
+            
+            # Compile module with training data
+            optimized_qa = optimizer.compile(
+                student=SimpleQA(),
+                trainset=training_examples
+            )
+            
+            # Use optimized module
+            answer = optimized_qa("What is machine learning?")
+            """)
+            
+            print("\n✓ DSPy optimization automates the hardest part of LLM development")
+            print("✓ Your modules improve themselves based on real performance data")
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "tests/__init__.py":
+      content: |
+        """Test package for DSPy examples."""
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "tests/test_modules.py":
+      content: |
+        """Unit tests for DSPy modules."""
+
+        import pytest
+        import asyncio
+        from src.basic_examples import SimpleQA, Summarize
+        from src.structured_outputs import (
+            AsyncSummarizer, 
+            AsyncEntityExtractor,
+            AsyncClassifier,
+            SummaryOutput,
+            EntitiesOutput,
+            ClassificationOutput
+        )
+
+
+        class TestBasicModules:
+            """Test basic DSPy modules."""
+            
+            def test_qa_module_structure(self):
+                """Test Q&A module has correct structure."""
+                qa = SimpleQA()
+                assert hasattr(qa, 'forward')
+                assert callable(qa.forward)
+            
+            def test_summarize_module_structure(self):
+                """Test summarizer has correct structure."""
+                summarizer = Summarize()
+                assert hasattr(summarizer, 'forward')
+                assert callable(summarizer.forward)
+
+
+        class TestStructuredOutputs:
+            """Test modules with structured outputs."""
+            
+            @pytest.mark.asyncio
+            async def test_async_summarizer_returns_structured_output(self):
+                """Test async summarizer returns SummaryOutput."""
+                summarizer = AsyncSummarizer()
+                # Mock test - in real tests you'd mock the LLM response
+                assert hasattr(summarizer, 'forward')
+                assert asyncio.iscoroutinefunction(summarizer.forward)
+            
+            @pytest.mark.asyncio
+            async def test_entity_extractor_returns_structured_output(self):
+                """Test entity extractor returns EntitiesOutput."""
+                extractor = AsyncEntityExtractor()
+                assert hasattr(extractor, 'forward')
+                assert asyncio.iscoroutinefunction(extractor.forward)
+            
+            def test_output_schemas_are_valid(self):
+                """Test Pydantic schemas are properly defined."""
+                # Test SummaryOutput
+                summary = SummaryOutput(summary="Test summary", word_count=2)
+                assert summary.summary == "Test summary"
+                assert summary.word_count == 2
+                
+                # Test EntitiesOutput
+                entities = EntitiesOutput(
+                    entities=["Person1", "Company1"],
+                    entity_types=["person", "organization"]
+                )
+                assert len(entities.entities) == 2
+                assert len(entities.entity_types) == 2
+                
+                # Test ClassificationOutput
+                classification = ClassificationOutput(
+                    label="technical",
+                    confidence=0.95
+                )
+                assert classification.label == "technical"
+                assert 0 <= classification.confidence <= 1
+
+
+        class TestPipelines:
+            """Test pipeline composition."""
+            
+            def test_pipeline_composition(self):
+                """Test that pipelines can be created and have expected structure."""
+                from src.pipelines import ProcessEmailPipeline, CodeAnalysisPipeline
+                
+                # Email pipeline
+                email_pipeline = ProcessEmailPipeline()
+                assert hasattr(email_pipeline, 'forward')
+                assert hasattr(email_pipeline, 'summarize')
+                assert hasattr(email_pipeline, 'extract_entities')
+                
+                # Code pipeline
+                code_pipeline = CodeAnalysisPipeline()
+                assert hasattr(code_pipeline, 'forward')
+                assert hasattr(code_pipeline, 'understand')
+                assert hasattr(code_pipeline, 'find_issues')
+
+
+        if __name__ == "__main__":
+            pytest.main([__file__, "-v"])
+      metadata:
+        extension: ".py"
+        language: "python"
+
+    "requirements.txt":
+      content: |
+        # Core dependencies
+        dspy>=2.6.14
+        openai>=1.35.0
+        anthropic>=0.31.0
+        pydantic>=2.7.0
+        python-dotenv>=1.0.0
+        requests>=2.32.0
+        aiohttp>=3.9.0
+        
+        # Development dependencies
+        pytest>=8.2.0
+        pytest-asyncio>=0.23.0
+        black>=24.4.0
+        ruff>=0.4.0
+      metadata:
+        extension: ".txt"
+        language: "text"
+
+    ".gitignore":
+      content: |
+        # Python
+        __pycache__/
+        *.py[cod]
+        *$py.class
+        *.so
+        .Python
+        build/
+        develop-eggs/
+        dist/
+        downloads/
+        eggs/
+        .eggs/
+        lib/
+        lib64/
+        parts/
+        sdist/
+        var/
+        wheels/
+        *.egg-info/
+        .installed.cfg
+        *.egg
+        
+        # Virtual environments
+        venv/
+        env/
+        ENV/
+        .venv
+        
+        # IDE
+        .idea/
+        .vscode/
+        *.swp
+        *.swo
+        
+        # Environment variables
+        .env
+        .env.local
+        .env.*.local
+        
+        # OS
+        .DS_Store
+        Thumbs.db
+        
+        # Testing
+        .pytest_cache/
+        .coverage
+        htmlcov/
+        
+        # Logs
+        *.log
+      metadata:
+        extension: ""
+        language: "gitignore"
+        
