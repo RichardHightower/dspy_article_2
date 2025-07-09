@@ -24,17 +24,27 @@ def demonstrate_fragile_prompts():
 class SimpleQA(dspy.Module):
     """A basic question-answering module."""
 
+    def __init__(self):
+        super().__init__()
+        self.predict = dspy.Predict("question -> answer")
+
     def forward(self, question: str) -> str:
         """Answer a factual question concisely."""
-        return self.predict(question=question)
+        result = self.predict(question=question)
+        return result.answer
 
 
 class Summarize(dspy.Module):
     """A basic summarization module."""
 
+    def __init__(self):
+        super().__init__()
+        self.predict = dspy.Predict("document -> summary")
+
     def forward(self, document: str) -> str:
         """Summarize the input document in 2-3 sentences."""
-        return self.predict(document=document)
+        result = self.predict(document=document)
+        return result.summary
 
 
 def demonstrate_basic_qa():

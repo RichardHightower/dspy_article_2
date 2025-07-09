@@ -50,3 +50,5 @@ htmlcov/
 
 # Logs
 *.log
+
+.history/

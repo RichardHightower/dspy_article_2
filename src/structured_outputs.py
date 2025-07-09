@@ -1,4 +1,13 @@
-"""Modern DSPy features: async execution and structured outputs with Pydantic."""
+"""Modern DSPy features: async execution and structured outputs with Pydantic.
+
+Follows DSPy async best practices:
+- Uses aforward() naming for async methods
+- Uses native .acall() for async predictions
+- Proper error handling with structured outputs
+
+Note: This code assumes DSPy 2.6+ with native async support.
+For older versions, use dspy.asyncify() or asyncio.to_thread().
+"""
 
 import asyncio
 import dspy
@@ -30,14 +39,20 @@ class ClassificationOutput(BaseModel):
 class AsyncSummarizer(dspy.Module):
     """Async summarization with structured output."""
 
-    async def forward(self, document: str) -> SummaryOutput:
+    def __init__(self):
+        super().__init__()
+        self.predict = dspy.Predict("document -> summary")
+
+    async def aforward(self, document: str) -> SummaryOutput:
         """Return a structured summary of the input document."""
-        # In DSPy 2.6+, predict can be async
-        result = await self.predict(document=document)
+        # Use native async support with acall()
+        result = await self.predict.acall(document=document)
 
         # Parse result into structured output
-        # In production DSPy, this would be automatic with TypedPredictors
-        summary_text = str(result)
+        # IMPORTANT: This manual parsing is a PLACEHOLDER for demonstration purposes.
+        # In production DSPy, TypedPredictors would handle this automatically,
+        # providing type-safe parsing and validation without manual string manipulation.
+        summary_text = str(result.summary)
         word_count = len(summary_text.split())
 
         return SummaryOutput(summary=summary_text, word_count=word_count)
@@ -46,33 +61,80 @@ class AsyncSummarizer(dspy.Module):
 class AsyncEntityExtractor(dspy.Module):
     """Async entity extraction with structured output."""
 
-    async def forward(self, text: str) -> EntitiesOutput:
+    def __init__(self):
+        super().__init__()
+        self.predict = dspy.Predict("text -> entities")
+
+    async def aforward(self, text: str) -> EntitiesOutput:
         """Extract named entities with their types."""
-        result = await self.predict(text=text)
+        result = await self.predict.acall(text=text)
 
         # Show what the LLM returned
-        print(f"    Entity extraction LLM result: {result}")
+        print(f"    Entity extraction LLM result: {result.entities}")
 
-        # Mock structured parsing (real DSPy would handle this)
-        # This demonstrates the pattern
-        entities = ["DSPy", "Python", "AI"]
-        types = ["Framework", "Language", "Technology"]
+        # Parse the result
+        # IMPORTANT: The following manual parsing logic is a TEMPORARY PLACEHOLDER.
+        # In production, TypedPredictors would handle all parsing and validation automatically.
+        # DO NOT build complex parsing logic on top of this demonstration code.
+        entities_str = str(result.entities)
+        # Simple parsing - split by common delimiters
+        entities = [e.strip() for e in entities_str.replace(",", ";").split(";") if e.strip()]
+        
+        # Infer entity types based on common patterns
+        entity_types = []
+        for entity in entities:
+            entity_lower = entity.lower()
+            if any(word in entity_lower for word in ["inc", "corp", "company", "llc", "organization"]):
+                entity_types.append("Organization")
+            elif any(word in entity_lower for word in ["framework", "library", "api", "programming", "code", "schema", "system"]):
+                entity_types.append("Technology")
+            elif any(word in entity_lower for word in ["optimization", "execution", "process", "method"]):
+                entity_types.append("Concept")
+            elif entity[0].isupper() and len(entity.split()) == 2 and not any(tech in entity_lower for tech in ["programming", "code", "api"]):
+                # Likely a person's name (two capitalized words)
+                entity_types.append("Person")
+            else:
+                entity_types.append("Other")
 
-        return EntitiesOutput(entities=entities, entity_types=types)
+        return EntitiesOutput(entities=entities[:5], entity_types=entity_types[:5])  # Limit to 5 for demo
 
 
 class AsyncClassifier(dspy.Module):
     """Async document classification with confidence scores."""
 
-    async def forward(self, document: str) -> ClassificationOutput:
+    def __init__(self):
+        super().__init__()
+        self.predict = dspy.Predict("document -> category, confidence_score")
+
+    async def aforward(self, document: str) -> ClassificationOutput:
         """Classify the document with confidence score."""
-        result = await self.predict(document=document)
+        result = await self.predict.acall(document=document)
 
         # Show what the LLM returned
-        print(f"    Classification LLM result: {result}")
+        print(f"    Classification LLM result: category={result.category}, confidence={result.confidence_score}")
 
-        # Mock structured output
-        return ClassificationOutput(label="technical_documentation", confidence=0.95)
+        # Parse the confidence score
+        # NOTE: This manual confidence parsing is a PLACEHOLDER demonstration.
+        # TypedPredictors in production would ensure properly formatted, validated outputs.
+        try:
+            # Handle various confidence formats (0.95, 95%, "high", etc.)
+            confidence_str = str(result.confidence_score).strip()
+            if confidence_str.endswith('%'):
+                confidence = float(confidence_str.rstrip('%')) / 100
+            elif confidence_str.lower() in ['high', 'very high']:
+                confidence = 0.9
+            elif confidence_str.lower() == 'medium':
+                confidence = 0.7
+            elif confidence_str.lower() == 'low':
+                confidence = 0.5
+            else:
+                confidence = float(confidence_str)
+                if confidence > 1:  # If given as percentage without %
+                    confidence = confidence / 100
+        except (ValueError, AttributeError):
+            confidence = 0.8  # Default confidence if parsing fails
+
+        return ClassificationOutput(label=str(result.category).strip(), confidence=confidence)
 
 
 async def demonstrate_structured_outputs():
@@ -100,15 +162,18 @@ async def demonstrate_structured_outputs():
     try:
         # Process multiple documents concurrently
         summaries = await asyncio.gather(
-            summarizer(technical_doc), summarizer(business_doc)
+            summarizer.aforward(technical_doc), 
+            summarizer.aforward(business_doc),
+            return_exceptions=True  # Handle partial failures gracefully
         )
 
-        for i, (doc, summary) in enumerate(
-            zip([technical_doc, business_doc], summaries)
-        ):
-            print(f"\nDocument {i+1} Summary:")
-            print(f"  Summary: {summary.summary}")
-            print(f"  Word count: {summary.word_count}")
+        for i, (doc, summary) in enumerate(zip([technical_doc, business_doc], summaries)):
+            if isinstance(summary, Exception):
+                print(f"\nDocument {i+1} Error: {summary}")
+            else:
+                print(f"\nDocument {i+1} Summary:")
+                print(f"  Summary: {summary.summary}")
+                print(f"  Word count: {summary.word_count}")
     except Exception as e:
         print(f"Error in summarization: {e}")
 
@@ -117,7 +182,7 @@ async def demonstrate_structured_outputs():
     print("\n\n2. Entity Extraction with Types:")
 
     try:
-        entities = await extractor(technical_doc)
+        entities = await extractor.aforward(technical_doc)
         print(f"Entities found: {', '.join(entities.entities)}")
         print(f"Entity types: {', '.join(entities.entity_types)}")
     except Exception as e:
@@ -129,15 +194,18 @@ async def demonstrate_structured_outputs():
 
     try:
         results = await asyncio.gather(
-            classifier(technical_doc), classifier(business_doc)
+            classifier.aforward(technical_doc), 
+            classifier.aforward(business_doc),
+            return_exceptions=True
         )
 
-        for i, (doc_snippet, result) in enumerate(
-            zip(["technical", "business"], results)
-        ):
-            print(f"\n{doc_snippet.capitalize()} document:")
-            print(f"  Classification: {result.label}")
-            print(f"  Confidence: {result.confidence:.2%}")
+        for i, (doc_snippet, result) in enumerate(zip(["technical", "business"], results)):
+            if isinstance(result, Exception):
+                print(f"\n{doc_snippet.capitalize()} document error: {result}")
+            else:
+                print(f"\n{doc_snippet.capitalize()} document:")
+                print(f"  Classification: {result.label}")
+                print(f"  Confidence: {result.confidence:.2%}")
     except Exception as e:
         print(f"Error in classification: {e}")
 
