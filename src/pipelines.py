@@ -1,6 +1,6 @@
 """Multi-stage DSPy pipelines showing module composition.
 
-Follows DSPy async best practices from ASYNC.md:
+Follows DSPy async best practices based on the documentation:
 - Uses asyncio.gather() for concurrent execution
 - Uses native .acall() methods when available
 - Properly named async methods (aforward)
