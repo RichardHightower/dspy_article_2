@@ -49,7 +49,9 @@ class AsyncSummarizer(dspy.Module):
         result = await self.predict.acall(document=document)
 
         # Parse result into structured output
-        # In production DSPy, this would be automatic with TypedPredictors
+        # IMPORTANT: This manual parsing is a PLACEHOLDER for demonstration purposes.
+        # In production DSPy, TypedPredictors would handle this automatically,
+        # providing type-safe parsing and validation without manual string manipulation.
         summary_text = str(result.summary)
         word_count = len(summary_text.split())
 
@@ -70,8 +72,10 @@ class AsyncEntityExtractor(dspy.Module):
         # Show what the LLM returned
         print(f"    Entity extraction LLM result: {result.entities}")
 
-        # Parse the result - in real DSPy with TypedPredictors this would be automatic
-        # For now, we'll extract entities from the LLM response
+        # Parse the result
+        # IMPORTANT: The following manual parsing logic is a TEMPORARY PLACEHOLDER.
+        # In production, TypedPredictors would handle all parsing and validation automatically.
+        # DO NOT build complex parsing logic on top of this demonstration code.
         entities_str = str(result.entities)
         # Simple parsing - split by common delimiters
         entities = [e.strip() for e in entities_str.replace(",", ";").split(";") if e.strip()]
@@ -110,6 +114,8 @@ class AsyncClassifier(dspy.Module):
         print(f"    Classification LLM result: category={result.category}, confidence={result.confidence_score}")
 
         # Parse the confidence score
+        # NOTE: This manual confidence parsing is a PLACEHOLDER demonstration.
+        # TypedPredictors in production would ensure properly formatted, validated outputs.
         try:
             # Handle various confidence formats (0.95, 95%, "high", etc.)
             confidence_str = str(result.confidence_score).strip()
