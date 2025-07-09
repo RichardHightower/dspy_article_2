@@ -1,4 +1,13 @@
-"""Multi-stage DSPy pipelines showing module composition."""
+"""Multi-stage DSPy pipelines showing module composition.
+
+Follows DSPy async best practices from ASYNC.md:
+- Uses asyncio.gather() for concurrent execution
+- Uses native .acall() methods when available
+- Properly named async methods (aforward)
+
+Note: This code assumes DSPy 2.6+ with native async support.
+For older versions, wrap sync calls with asyncio.to_thread().
+"""
 
 import asyncio
 import dspy
@@ -28,17 +37,18 @@ class ProcessEmailPipeline(dspy.Module):
         self.determine_priority = dspy.Predict("summary, sentiment -> priority")
         self.suggest_response = dspy.Predict("summary, sentiment, priority -> response")
 
-    async def forward(self, email_body: str) -> EmailAnalysisOutput:
+    async def aforward(self, email_body: str) -> EmailAnalysisOutput:
         """Process email through multiple analysis stages."""
-        # Stage 1: Summarize
-        summary = self.summarize(email=email_body).summary
+        # Stage 1: Summarize (sequential as needed for next stages)
+        summary_result = await self.summarize.acall(email=email_body)
+        summary = summary_result.summary
 
-        # Stage 2: Extract entities (concurrent with sentiment)
-        entities_task = asyncio.create_task(self.extract_entities(text=email_body))
-        sentiment_task = asyncio.create_task(self.analyze_sentiment(text=email_body))
-
-        entities_result = await entities_task
-        sentiment_result = await sentiment_task
+        # Stage 2: Extract entities and analyze sentiment concurrently
+        # Using asyncio.gather() as recommended by DSPy documentation
+        entities_result, sentiment_result = await asyncio.gather(
+            self.extract_entities.acall(text=email_body),
+            self.analyze_sentiment.acall(text=email_body)
+        )
 
         # Parse results (using actual LLM responses when available)
         # For demo, we'll show what the LLM returned and use fallback values
@@ -51,12 +61,14 @@ class ProcessEmailPipeline(dspy.Module):
         print(f"    Sentiment analysis result: {sentiment_result}")
 
         # Stage 3: Determine priority based on summary and sentiment
-        priority_result = self.determine_priority(summary=summary, sentiment=sentiment)
+        priority_result = await self.determine_priority.acall(
+            summary=summary, sentiment=sentiment
+        )
         priority = getattr(priority_result, "priority", "high")
         print(f"    Priority determination result: {priority_result}")
 
         # Stage 4: Suggest response
-        response_result = self.suggest_response(
+        response_result = await self.suggest_response.acall(
             summary=summary, sentiment=sentiment, priority=priority
         )
         suggested_response = getattr(
@@ -106,6 +118,32 @@ class CodeAnalysisPipeline(dspy.Module):
             "tests": tests,
         }
 
+    async def aforward(self, code: str):
+        """Analyze code asynchronously with concurrent stage execution where possible."""
+        # Stage 1: Understand what the code does
+        description_result = await self.understand.acall(code=code)
+        description = description_result.description
+
+        # Stage 2: Find issues and generate tests concurrently
+        # Both can run in parallel since they only depend on code and description
+        issues_task = self.find_issues.acall(code=code, description=description)
+        tests_task = self.generate_tests.acall(code=code, description=description)
+        
+        issues_result, tests_result = await asyncio.gather(issues_task, tests_task)
+        issues = issues_result.issues
+        tests = tests_result.tests
+
+        # Stage 3: Suggest fixes based on issues
+        suggestions_result = await self.suggest_fixes.acall(code=code, issues=issues)
+        suggestions = suggestions_result.suggestions
+
+        return {
+            "description": description,
+            "issues": issues,
+            "suggestions": suggestions,
+            "tests": tests,
+        }
+
 
 async def demonstrate_pipeline():
     """Demonstrate multi-stage pipeline processing."""
@@ -129,7 +167,8 @@ async def demonstrate_pipeline():
     """
 
     try:
-        result = await email_pipeline(sample_email)
+        # Note: we call aforward() for async execution
+        result = await email_pipeline.aforward(sample_email)
         print("\nEmail Analysis Results:")
         print(f"  Summary: {result.summary}")
         print(f"  Entities: {', '.join(result.entities)}")

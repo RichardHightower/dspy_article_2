@@ -36,15 +36,15 @@ class TestStructuredOutputs:
         """Test async summarizer returns SummaryOutput."""
         summarizer = AsyncSummarizer()
         # Mock test - in real tests you'd mock the LLM response
-        assert hasattr(summarizer, "forward")
-        assert asyncio.iscoroutinefunction(summarizer.forward)
+        assert hasattr(summarizer, "aforward")
+        assert asyncio.iscoroutinefunction(summarizer.aforward)
 
     @pytest.mark.asyncio
     async def test_entity_extractor_returns_structured_output(self):
         """Test entity extractor returns EntitiesOutput."""
         extractor = AsyncEntityExtractor()
-        assert hasattr(extractor, "forward")
-        assert asyncio.iscoroutinefunction(extractor.forward)
+        assert hasattr(extractor, "aforward")
+        assert asyncio.iscoroutinefunction(extractor.aforward)
 
     def test_output_schemas_are_valid(self):
         """Test Pydantic schemas are properly defined."""
@@ -75,7 +75,8 @@ class TestPipelines:
 
         # Email pipeline
         email_pipeline = ProcessEmailPipeline()
-        assert hasattr(email_pipeline, "forward")
+        assert hasattr(email_pipeline, "aforward")
+        assert asyncio.iscoroutinefunction(email_pipeline.aforward)
         assert hasattr(email_pipeline, "summarize")
         assert hasattr(email_pipeline, "extract_entities")
 
